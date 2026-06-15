@@ -6,7 +6,6 @@ import {
   Funnel,
   LabelList,
   Tooltip,
-  type TooltipProps,
 } from 'recharts';
 import { ChartEmptyState } from './ChartEmptyState';
 
@@ -29,20 +28,25 @@ interface LeadFunnelProps {
 }
 
 const FUNNEL_COLORS = [
-  '#10b981', // emerald — top of funnel
+  '#10b981',
   '#34d399',
   '#6ee7b7',
   '#a7f3d0',
-  '#d1fae5', // lightest — bottom
+  '#d1fae5',
 ];
 
-function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+// recharts v3 tooltip receives a plain `props` object — avoid the broken generic
+function CustomTooltip(props: Record<string, unknown>) {
+  const { active, payload } = props as {
+    active?: boolean;
+    payload?: Array<{ payload: FunnelDataPoint & { value: number } }>;
+  };
   if (!active || !payload?.length) return null;
-  const { stage, count, value } = payload[0].payload as FunnelDataPoint & { value: number };
+  const { stage, count } = payload[0].payload;
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-lg text-xs">
       <p className="font-semibold text-gray-700">{stage}</p>
-      <p className="mt-0.5 text-gray-900 font-medium">{count ?? value} leads</p>
+      <p className="mt-0.5 text-gray-900 font-medium">{count} leads</p>
     </div>
   );
 }

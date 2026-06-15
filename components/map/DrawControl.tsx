@@ -48,7 +48,8 @@ export function DrawControl({
   onCreate,
   onDelete,
 }: DrawControlProps) {
-  useControl<MapboxDraw>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  useControl<any>(
     () => new MapboxDraw({ displayControlsDefault, controls, defaultMode }),
     ({ map }: { map: MapRef }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

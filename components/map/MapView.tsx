@@ -76,8 +76,9 @@ export function MapView({
     onViewStateChange?.(evt.viewState);
   }
 
-  function handleMarkerClick(e: MapLayerMouseEvent | React.MouseEvent, listing: PropertySummary) {
-    e.stopPropagation?.();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function handleMarkerClick(e: any, listing: PropertySummary) {
+    if (typeof e?.stopPropagation === 'function') e.stopPropagation();
     setActivePopup(listing);
     onMarkerClick?.(listing);
   }

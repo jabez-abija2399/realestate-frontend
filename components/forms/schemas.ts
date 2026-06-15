@@ -1,19 +1,22 @@
 import { z } from 'zod';
 
 /**
- * schemas.ts — single source of truth for the listing form Zod schema.
+ * schemas.ts — listing form Zod schema (Zod v4 compatible).
  *
- * Rules applied per the spec:
- *  - z.preprocess on numeric fields: coerces empty string → undefined
- *    so optional number fields don't fail validation when left blank.
- *  - z.boolean().refine(v => v === true) for checkbox confirmations:
- *    keeps the inferred type as `boolean` (not `true`) so default values
- *    of `false` work correctly with react-hook-form.
- *  - STEP_FIELDS maps each wizard step index to its field names so
- *    trigger(STEP_FIELDS[step]) validates only the current step's fields.
+ * Zod v4 changes from v3:
+ *  - required_error → error  (on string/number/enum)
+ *  - z.number({ required_error }) → z.number({ error })
+ *  - z.string({ required_error }) → z.string({ error })
+ *  - z.enum([...], { required_error }) → z.enum([...], { error })
+ *
+ *  - z.preprocess on numeric fields coerces "" → undefined so optional
+ *    number fields don't fail when left blank.
+ *  - z.boolean().refine(v => v === true) keeps inferred type as boolean
+ *    so react-hook-form default values of false compile correctly.
+ *  - STEP_FIELDS drives per-step validation via form.trigger().
  */
 
-// ── Re-usable coerce helper ───────────────────────────────────────────────────
+// ── Numeric coerce helpers ────────────────────────────────────────────────────
 
 const optionalNumber = z.preprocess(
   (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
@@ -22,50 +25,45 @@ const optionalNumber = z.preprocess(
 
 const requiredNumber = z.preprocess(
   (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
-  z.number({ required_error: 'Required' }).positive('Must be a positive number')
+  z.number({ error: 'Required' }).positive('Must be a positive number')
 );
 
 // ── Step 1 — Basic Info ───────────────────────────────────────────────────────
 
 export const basicInfoSchema = z.object({
   title: z
-    .string({ required_error: 'Title is required' })
+    .string({ error: 'Title is required' })
     .min(5, 'At least 5 characters')
     .max(100, 'Max 100 characters'),
 
   description: z
-    .string({ required_error: 'Description is required' })
+    .string({ error: 'Description is required' })
     .min(20, 'At least 20 characters')
     .max(3000, 'Max 3000 characters'),
 
-  address: z.string({ required_error: 'Address is required' }).min(5, 'Enter a full address'),
-
-  city: z.string({ required_error: 'City is required' }).min(2, 'Enter a city'),
-
-  country: z.string({ required_error: 'Country is required' }).min(2, 'Enter a country'),
+  address: z.string({ error: 'Address is required' }).min(5, 'Enter a full address'),
+  city:    z.string({ error: 'City is required' }).min(2, 'Enter a city'),
+  country: z.string({ error: 'Country is required' }).min(2, 'Enter a country'),
 
   lat: z.preprocess(
     (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
     z.number().min(-90).max(90).optional()
   ),
-
   lng: z.preprocess(
     (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
     z.number().min(-180).max(180).optional()
   ),
 
-  listingType: z.enum(['sale', 'rent'], { required_error: 'Select listing type' }),
+  listingType: z.enum(['sale', 'rent'], { error: 'Select listing type' }),
+  type:        z.enum(['residential', 'commercial'], { error: 'Select property type' }),
 
-  type: z.enum(['residential', 'commercial'], { required_error: 'Select property type' }),
-
-  price: requiredNumber,
-
+  price:    requiredNumber,
   currency: z.string().default('USD'),
 
-  beds: optionalNumber,
-  baths: optionalNumber,
-  sqft: optionalNumber,
-  yearBuilt: optionalNumber,
+  beds:          optionalNumber,
+  baths:         optionalNumber,
+  sqft:          optionalNumber,
+  yearBuilt:     optionalNumber,
   parkingSpaces: optionalNumber,
 });
 
@@ -81,20 +79,20 @@ export const photosSchema = z.object({
 // ── Step 3 — Amenities ────────────────────────────────────────────────────────
 
 export const AVAILABLE_AMENITIES = [
-  { id: 'wifi',         label: 'Wi-Fi' },
-  { id: 'ac',           label: 'Air Conditioning' },
-  { id: 'gym',          label: 'Gym' },
-  { id: 'pool',         label: 'Swimming Pool' },
-  { id: 'parking',      label: 'Parking' },
-  { id: 'security',     label: 'Security / CCTV' },
-  { id: 'elevator',     label: 'Elevator' },
-  { id: 'generator',    label: 'Generator' },
-  { id: 'solar',        label: 'Solar Power' },
-  { id: 'garden',       label: 'Garden' },
-  { id: 'balcony',      label: 'Balcony' },
-  { id: 'laundry',      label: 'Laundry' },
-  { id: 'storage',      label: 'Storage Room' },
-  { id: 'ev_charging',  label: 'EV Charging' },
+  { id: 'wifi',        label: 'Wi-Fi'             },
+  { id: 'ac',          label: 'Air Conditioning'   },
+  { id: 'gym',         label: 'Gym'                },
+  { id: 'pool',        label: 'Swimming Pool'       },
+  { id: 'parking',     label: 'Parking'             },
+  { id: 'security',    label: 'Security / CCTV'     },
+  { id: 'elevator',    label: 'Elevator'             },
+  { id: 'generator',   label: 'Generator'            },
+  { id: 'solar',       label: 'Solar Power'          },
+  { id: 'garden',      label: 'Garden'               },
+  { id: 'balcony',     label: 'Balcony'              },
+  { id: 'laundry',     label: 'Laundry'              },
+  { id: 'storage',     label: 'Storage Room'          },
+  { id: 'ev_charging', label: 'EV Charging'          },
 ] as const;
 
 export type AmenityId = (typeof AVAILABLE_AMENITIES)[number]['id'];
@@ -106,20 +104,14 @@ export const amenitiesSchema = z.object({
 // ── Step 4 — Tier & Pricing ───────────────────────────────────────────────────
 
 export const tierSchema = z.object({
-  tier: z.enum(['basic', 'premium', 'featured'], {
-    required_error: 'Select a listing tier',
-  }),
+  tier: z.enum(['basic', 'premium', 'featured'], { error: 'Select a listing tier' }),
 
-  // Rental-specific
   leaseDurationMonths: optionalNumber,
-  depositAmount: optionalNumber,
+  depositAmount:       optionalNumber,
 
-  // Ownership confirmation (for sale listings)
   confirmOwnership: z
     .boolean()
-    .refine((v) => v === true, {
-      message: 'You must confirm you are the legal owner',
-    })
+    .refine((v) => v === true, { message: 'You must confirm you are the legal owner' })
     .optional(),
 });
 
@@ -130,11 +122,8 @@ export const titleSchema = z.object({
 
   confirmTitleAccuracy: z
     .boolean()
-    .refine((v) => v === true, {
-      message: 'Confirm the title document is accurate',
-    }),
+    .refine((v) => v === true, { message: 'Confirm the title document is accurate' }),
 
-  // Optional: pre-existing on-chain token ID for re-listing
   existingTokenId: z.string().optional(),
 });
 
@@ -148,7 +137,7 @@ export const listingFormSchema = basicInfoSchema
 
 export type ListingFormValues = z.infer<typeof listingFormSchema>;
 
-// ── Step field map — used with form.trigger(STEP_FIELDS[step]) ────────────────
+// ── Step field map ────────────────────────────────────────────────────────────
 
 export const STEP_FIELDS: Record<number, (keyof ListingFormValues)[]> = {
   0: ['title', 'description', 'address', 'city', 'country', 'listingType', 'type', 'price'],
@@ -161,12 +150,12 @@ export const STEP_FIELDS: Record<number, (keyof ListingFormValues)[]> = {
 // ── Default values ────────────────────────────────────────────────────────────
 
 export const LISTING_FORM_DEFAULTS: Partial<ListingFormValues> = {
-  listingType: 'sale',
-  type: 'residential',
-  currency: 'USD',
-  tier: 'basic',
-  photos: [],
-  amenityIds: [],
+  listingType:          'sale',
+  type:                 'residential',
+  currency:             'USD',
+  tier:                 'basic',
+  photos:               [],
+  amenityIds:           [],
   confirmTitleAccuracy: false,
-  confirmOwnership: false,
+  confirmOwnership:     false,
 };

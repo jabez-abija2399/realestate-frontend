@@ -5,7 +5,8 @@ import { Check, Star, Zap } from 'lucide-react';
 import { FormField } from '@/components/ui/FormField';
 import { inputClass, checkboxClass, inputErrorClass } from './styles';
 import { cn } from '@/lib/utils';
-import type { ListingFormValues, ListingTier } from './schemas';
+import type { ListingFormValues } from './schemas';
+import type { ListingTier } from '@/types';
 import type { LucideIcon } from 'lucide-react';
 
 /**

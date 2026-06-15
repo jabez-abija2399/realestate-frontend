@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  type TooltipProps,
 } from 'recharts';
 import { ChartEmptyState } from './ChartEmptyState';
 
@@ -42,12 +41,14 @@ const DEFAULT_COLORS = [
   '#06b6d4', // cyan-500
 ];
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+// Recharts v3: TooltipProps generic is unreliable — type the props directly
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-lg text-xs">
       <p className="mb-1.5 font-semibold text-gray-700">{label}</p>
-      {payload.map((p) => (
+      {(payload as Array<{ dataKey: string; color: string; name: string; value: number }>).map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
           <span className="text-gray-600">{p.name}:</span>

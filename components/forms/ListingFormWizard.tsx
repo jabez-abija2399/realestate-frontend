@@ -57,9 +57,10 @@ export function ListingFormWizard({
   const [uploadingDoc,   setUploadingDoc]   = React.useState(false);
 
   const methods = useForm<ListingFormValues>({
-    resolver: zodResolver(listingFormSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(listingFormSchema) as any,
     defaultValues: { ...LISTING_FORM_DEFAULTS, ...defaultValues },
-    mode: 'onTouched', // validate on blur, then live after first touch
+    mode: 'onTouched',
   });
 
   const { handleSubmit, trigger, watch, setValue } = methods;

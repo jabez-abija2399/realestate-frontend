@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   Cell,
-  type TooltipProps,
 } from 'recharts';
 import { ChartEmptyState } from './ChartEmptyState';
 
@@ -32,9 +31,11 @@ interface OccupancyChartProps {
   height?: number;
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+// Recharts v3: TooltipProps generic is unreliable — type the props directly
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
-  const occupancy = payload[0]?.value ?? 0;
+  const occupancy = (payload[0]?.value as number) ?? 0;
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-lg text-xs">
       <p className="mb-1 font-semibold text-gray-700 truncate max-w-[160px]">{label}</p>
